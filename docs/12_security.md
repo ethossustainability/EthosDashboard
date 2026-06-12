@@ -52,11 +52,12 @@ Security is non-negotiable. This document defines every layer of security in the
 
 ### JWT Token
 - Issued by Supabase Auth on login
-- Contains user_id and org_role_id
+- Contains user_id, org_role_id, and chapter_id (injected via 000_jwt_hook.sql custom claims hook)
 - Included in every database request from the frontend
-- Supabase reads the token, applies RLS rules based on user_id and role
+- Supabase reads the token, applies RLS rules based on claims
 - Even if intercepted: RLS prevents access to other users' data
 - Expires in 1 hour — stolen tokens are short-lived
+- Role or chapter changes take up to 1 hour to reflect in JWT — acceptable for rare admin actions
 
 ---
 
@@ -64,150 +65,168 @@ Security is non-negotiable. This document defines every layer of security in the
 
 RLS is enforced at the database level — not just in application code.
 Even if a bug exists in the frontend or API, the database itself refuses unauthorized reads and writes.
+Every table has RLS enabled. No table is left with default allow-all.
 
 ### RLS Policies by Table
 
 #### users
-- SELECT: user can read own record. Board can read all.
-- UPDATE: user can update own non-sensitive fields (name, phone, guardian info). Board can update any record.
-- INSERT: handled by Supabase Auth only — no direct inserts from frontend.
-- DELETE: Board only via Supabase dashboard — not a UI feature.
+- SELECT: user reads own record. Board reads all. supabase_auth_admin reads all (for JWT hook).
+- SELECT (directory): non-Board users query users_directory view (sensitive fields excluded — no guardian_email, guardian_phone, date_of_birth)
+- UPDATE: user updates own non-sensitive fields. Board updates any record.
+- INSERT: service role only (Supabase Auth signup flow)
+- DELETE: no policy — Board only via Supabase dashboard
 
 #### user_auth
-- SELECT: user can read own auth records. Board can read all.
-- INSERT/UPDATE: Board only (linking Ethos email).
-- DELETE: Board only.
+- SELECT: user reads own. Board reads all. supabase_auth_admin reads all.
+- INSERT/UPDATE: Board only (linking Ethos email)
+- DELETE: no policy
+
+#### org_roles
+- SELECT: all authenticated users (role names are public info)
+- INSERT/UPDATE/DELETE: no policy — service role only (lookup table, immutable)
+
+#### chapters
+- SELECT: all authenticated users
+- INSERT/UPDATE: Board only
+- DELETE: no policy — chapters never deleted
 
 #### projects
-- SELECT: authenticated users can read published projects scoped to their chapter + open calls. Board reads all.
-- INSERT: Project Lead and Board only.
-- UPDATE: Project Lead (own projects only). Board (any project).
-- DELETE: Board only.
+- SELECT (anon): is_published = true only (chapter filtering in API)
+- SELECT (authenticated): own chapter published + org-wide open calls. Lead sees own created projects. Board sees all.
+- INSERT: Project Lead and Board only
+- UPDATE: Project Lead (own projects). Board (any).
+- DELETE: Board only
 
 #### shifts
-- SELECT: authenticated users can read shifts for projects they have access to.
-- INSERT/UPDATE/DELETE: Project Lead (own project shifts). Board (any).
+- SELECT (anon): shifts of published projects
+- SELECT (authenticated): shifts of projects user can see (EXISTS subquery)
+- INSERT/UPDATE/DELETE: Project Lead (own project). Board (any).
 
 #### project_roles
-- SELECT: authenticated users on the project.
+- SELECT (anon): roles of published projects
+- SELECT (authenticated): roles of projects user can see
 - INSERT/UPDATE/DELETE: Project Lead (own project). Board (any).
 
 #### applications
-- SELECT: applicant reads own. Project Lead reads applications to own projects. Board reads all.
-- INSERT: any authenticated user (subject to 3-pending limit enforced in application logic).
-- UPDATE: Project Lead (own project applications). Board (any). Applicant (withdrawal only — status = Withdrawn, only if current status = Pending).
-- DELETE: never — archived only.
+- SELECT: user reads own. Project Lead reads applications to own projects (EXISTS on projects.created_by). Board reads all.
+- INSERT: any authenticated user (limits enforced in API)
+- UPDATE: Project Lead (own project applications). Board (any). Members have NO UPDATE policy — withdrawal via service role in API.
+- DELETE: no policy — archived only
 
 #### onboarding
 - SELECT: user reads own. Board reads all.
-- INSERT: system only (created on first application submission).
-- UPDATE: user (own steps). System (automated step completion). Board (any).
+- INSERT: service role only (created on first application submission)
+- UPDATE: user (own steps — orientation progress, slack connection). Service role (waiver/consent status via webhooks). Board (any).
+- DELETE: no policy
 
 #### tasks
-- SELECT: authenticated users on the project.
-- INSERT: Project Lead (own project). Board (any).
-- UPDATE: assigned user (own tasks — status only). Project Lead (own project tasks). Board (any).
-- DELETE: Project Lead (own project). Board (any).
+- SELECT: approved members on the project (EXISTS on applications). Project Lead (created_by). Board.
+- INSERT: Project Lead (own project). Board.
+- UPDATE: member (own assigned tasks — all fields at RLS level, status-only restriction enforced in API). Project Lead (own project tasks). Board (any).
+- DELETE: Project Lead (own project). Board.
 
 #### badges
-- SELECT: all authenticated users.
-- INSERT/UPDATE/DELETE: Board only.
+- SELECT: all authenticated users
+- INSERT/UPDATE/DELETE: Board only
 
 #### user_badges
-- SELECT: all authenticated users (displayed on directory profiles).
-- INSERT: Project Lead (participation badges for own project volunteers). Board (any).
-- DELETE: Board only.
+- SELECT: all authenticated users (displayed on directory profiles)
+- INSERT: Project Lead (participation badges for own project volunteers — nested EXISTS check). Board (any).
+- UPDATE/DELETE: Board only
 
 #### announcements
-- SELECT: all authenticated users.
-- INSERT: system only (Slack webhook handler using service role key).
-- UPDATE/DELETE: Board only.
+- SELECT: all authenticated users
+- INSERT: service role only (Slack webhook handler)
+- UPDATE/DELETE: Board only
 
 #### project_updates
-- SELECT: authenticated users on the project.
-- INSERT: system only (Slack webhook handler using service role key).
-- UPDATE/DELETE: Board only.
-
-#### donations
-- SELECT: all authenticated users.
-- INSERT/UPDATE/DELETE: Board only (Fundraising HQ team lead eventually).
+- SELECT: approved members on the project (EXISTS on applications). Project Lead (created_by). Board.
+- INSERT: service role only (Slack webhook handler)
+- UPDATE/DELETE: Board only
 
 #### fundraising_contacts
-- SELECT: all authenticated users.
-- INSERT/UPDATE/DELETE: Board only.
+- SELECT: all authenticated users
+- INSERT/UPDATE/DELETE: Board only
+
+#### donations
+- SELECT: all authenticated users
+- INSERT/UPDATE/DELETE: Board only
 
 #### files
-- SELECT: all authenticated users.
+- SELECT: all authenticated users
 - INSERT: Project Lead (project files for own projects). Board (any including Universal).
 - UPDATE/DELETE: Project Lead (own project files). Board (any).
 
 #### notifications
 - SELECT: user reads own. Board reads all.
-- INSERT: system only (notification service using service role key).
-- UPDATE (is_read, read_at): user (own notifications only).
-- DELETE: never.
+- INSERT: service role only (notification service)
+- UPDATE (is_read, read_at): user (own notifications only)
+- DELETE: no policy — never deleted
 
 #### notification_preferences
 - SELECT: user reads own. Board reads all.
-- INSERT: system only (created on first approval).
+- INSERT: service role only (created on first approval)
 - UPDATE: user (own preferences). Board (any).
+- DELETE: no policy
 
 #### recents
-- SELECT: user reads own only.
-- INSERT/UPDATE: user (own recents only — upsert on dwell).
-- DELETE: cascades from project/file deletion. User can clear own recents.
+- SELECT: user reads own only
+- INSERT/UPDATE: user (own recents — upsert on dwell)
+- DELETE: no FK cascade (reference_id cannot FK two tables). Cascade via trigger or API cleanup when project or file deleted. User can clear own recents.
 
 #### directory_profiles
-- SELECT: all authenticated users (scoped by chapter for non-Board).
-- INSERT: system only (created on first approval).
+- SELECT: all authenticated users. Profiles always visible — no hiding.
+- INSERT: service role only (created on first approval)
 - UPDATE: user (own bio only). Board (any field via Supabase dashboard — not UI).
+- DELETE: no policy
 
 #### volunteer_flags
 - SELECT: flagging Project Lead (own flags). Board (all).
-- INSERT: Project Lead only.
-- UPDATE (resolved fields): Board only.
-- DELETE: never.
+- INSERT: Project Lead only
+- UPDATE (resolved fields): Board only
+- DELETE: no policy — never deleted
 
 #### system_logs
-- SELECT: Board only.
-- INSERT: system only (error handlers using service role key).
-- UPDATE (resolved fields): Board only.
-- DELETE: never.
+- SELECT: Board only
+- INSERT: service role only (error handlers)
+- UPDATE (resolved fields): Board only
+- DELETE: no policy — never deleted
 
 #### policy_acknowledgments
 - SELECT: user reads own. Board reads all.
-- INSERT: user (own acknowledgments only).
-- DELETE: system only (on policy document update — Board action triggers cascade reset).
+- INSERT: user (own acknowledgments only)
+- DELETE: service role only (on policy document update — Board action triggers cascade reset)
 
 #### org_settings
-- SELECT: all authenticated users (fundraising goal is public).
-- INSERT/UPDATE: Board only.
-- DELETE: never.
-
-#### chapters
-- SELECT: all authenticated users.
-- INSERT/UPDATE: Board only.
-- DELETE: never.
+- SELECT: all authenticated users (fundraising goal is public)
+- INSERT/UPDATE: Board only
+- DELETE: no policy — never deleted
 
 ---
 
 ## Minor Data Protection
 
 ### COPPA Compliance
-- Minimum age: 14 — enforced at application submission (date_of_birth validated server-side)
+- Minimum age: 14 — enforced server-side in API at application submission (date_of_birth validated)
 - Under-13 flag: if date_of_birth indicates under 13, account creation is blocked with a clear message
 - No data collected from under-13 users at any point
 
 ### Parental Consent
 - Required for every user before onboarding completes
 - Handled via OpenSign — legally binding digital signature
-- Guardian email collected at application step 1 (Basics)
+- Guardian email collected at application Step 1 (Basics)
 - Consent document stored as OpenSign reference ID — not raw PDF in database
 - Consent signed_at timestamp stored permanently
 - Consent record never deleted even if application is rejected
 
+### Sensitive Field Protection
+- guardian_email, guardian_phone, date_of_birth never exposed to other members
+- These fields excluded from users_directory view
+- Only accessible via service role or Board via Supabase dashboard
+- No API endpoint exposes these fields to non-Board users
+
 ### Data minimization
-- Only data necessary for the app's function is collected
+- Only data necessary for app function is collected
 - No social security numbers
 - No payment information
 - No location tracking beyond city/region at signup
@@ -217,6 +236,7 @@ Even if a bug exists in the frontend or API, the database itself refuses unautho
 - Rejected and withdrawn applications archived — never deleted (audit trail)
 - Notifications never deleted (audit trail)
 - System logs never deleted (audit trail)
+- Volunteer flags never deleted (audit trail)
 - User accounts persist when member turns 18 — no forced deletion
 - Board can delete a user record via Supabase dashboard in exceptional circumstances — not a UI feature
 
@@ -228,28 +248,27 @@ Even if a bug exists in the frontend or API, the database itself refuses unautho
 - Anon key in frontend — safe by design, RLS enforces all access rules
 - Service role key in Vercel environment variables only
 - Database connection over SSL only
-- Supabase project in a region compliant with US data regulations
 
 ### OpenSign
-- Webhook payload verified using OpenSign's signature header before processing
+- Webhook payload verified using OpenSign's signing secret header before processing
 - Document reference IDs stored — never raw document content
-- Guardian email sent only to the address provided by the volunteer — never stored elsewhere
+- Guardian email sent only to the address provided by the volunteer
 
 ### Slack
-- Slack webhook payloads verified using Slack's signing secret
+- Slack webhook payloads verified using Slack signing secret
 - Signing secret stored in Vercel environment variables
 - Bot token stored in Vercel environment variables — never in frontend
+- Webhook timestamp checked — payloads older than 5 minutes rejected
 
 ### Resend
 - API key stored in Vercel environment variables
-- Emails sent from Ethos-branded domain (info@ethossustainability.org or a Resend-verified subdomain)
+- Emails sent from Ethos-branded domain
 - No email content stored beyond the notifications table log
 
 ### Google Drive
 - OAuth credentials stored in Vercel environment variables
 - App requests read-only Drive scope for file metadata
-- No file content passes through the app server — Drive URLs link directly to Google
-- Drive permissions managed at the Google Workspace level
+- No file content passes through app server — Drive URLs link directly to Google
 
 ### Google OAuth (SSO)
 - OAuth client ID and secret stored in Supabase Auth configuration
@@ -264,8 +283,8 @@ All stored in Vercel environment variables. Never committed to version control.
 
 | Variable | Used for |
 |---|---|
-| SUPABASE_URL | Supabase project URL |
-| SUPABASE_ANON_KEY | Frontend Supabase client |
+| NEXT_PUBLIC_SUPABASE_URL | Supabase project URL |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | Frontend Supabase client |
 | SUPABASE_SERVICE_ROLE_KEY | Server-side operations bypassing RLS |
 | SLACK_BOT_TOKEN | Slack API calls (channel creation, DMs) |
 | SLACK_SIGNING_SECRET | Webhook payload verification |
@@ -273,8 +292,6 @@ All stored in Vercel environment variables. Never committed to version control.
 | RESEND_API_KEY | Email sending |
 | GOOGLE_DRIVE_CLIENT_ID | Drive OAuth |
 | GOOGLE_DRIVE_CLIENT_SECRET | Drive OAuth |
-| NEXT_PUBLIC_SUPABASE_URL | Public — safe for frontend |
-| NEXT_PUBLIC_SUPABASE_ANON_KEY | Public — safe for frontend |
 
 ---
 
@@ -296,11 +313,21 @@ Before launch, the following must be verified:
 - [ ] Every table has explicit policies — no table left with default allow-all
 - [ ] Service role key confirmed absent from all frontend code and git history
 - [ ] All environment variables set in Vercel production environment
-- [ ] Slack signing secret verified on every incoming webhook
+- [ ] Slack signing secret verified on every incoming webhook (timestamp check included)
 - [ ] OpenSign webhook secret verified on every incoming webhook
 - [ ] date_of_birth validation enforced server-side (not just client-side)
 - [ ] Under-13 block tested and confirmed
 - [ ] JWT expiry confirmed (1 hour)
+- [ ] 000_jwt_hook.sql registered in Supabase Dashboard → Authentication → Hooks → Custom Access Token
+- [ ] JWT claims confirmed to include org_role_id and chapter_id after hook registration
 - [ ] Anon key tested — confirms it cannot read non-published projects without auth
 - [ ] Board role confirmed cannot demote another Board member via UI
 - [ ] policy_acknowledgment cascade reset tested on document update
+- [ ] users_directory view confirmed excludes guardian_email, guardian_phone, date_of_birth
+- [ ] 027_constraints.sql confirmed run after all other migrations
+- [ ] Verify UNIQUE constraints on users.personal_email, ethos_email, slack_user_id
+- [ ] Verify UNIQUE constraint on user_auth.google_account_email
+- [ ] Verify CHECK constraints on projects (open_call_app_level, location/is_virtual)
+- [ ] Verify CHECK constraints on badges (achievement/project_id)
+- [ ] Verify CHECK constraints on files (category/project_id)
+- [ ] Confirm directory_profiles.is_visible column does not exist in production schema
