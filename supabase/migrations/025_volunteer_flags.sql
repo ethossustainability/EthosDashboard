@@ -39,10 +39,18 @@ CREATE POLICY "volunteer_flags_select_board" ON public.volunteer_flags
 CREATE POLICY "volunteer_flags_insert_lead" ON public.volunteer_flags
   FOR INSERT TO authenticated
   WITH CHECK (
-    EXISTS (
+    flagged_by = auth.uid()
+    AND (auth.jwt() ->> 'org_role_id') = '2'
+    AND EXISTS (
       SELECT 1 FROM public.projects p
       WHERE p.project_id = volunteer_flags.project_id
       AND p.created_by = auth.uid()
+    )
+    AND EXISTS (
+      SELECT 1 FROM public.applications a
+      WHERE a.project_id = volunteer_flags.project_id
+      AND a.user_id = volunteer_flags.user_id
+      AND a.status = 'Approved'
     )
   );
 

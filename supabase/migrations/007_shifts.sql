@@ -56,7 +56,10 @@ CREATE POLICY "shifts_insert_lead_board" ON public.shifts
       SELECT 1 FROM public.projects p
       WHERE p.project_id = shifts.project_id
       AND (
-        p.created_by = auth.uid()
+        (
+          (auth.jwt() ->> 'org_role_id') = '2'
+          AND p.created_by = auth.uid()
+        )
         OR (auth.jwt() ->> 'org_role_id') = '3'
       )
     )
@@ -71,7 +74,10 @@ CREATE POLICY "shifts_update_lead_board" ON public.shifts
       SELECT 1 FROM public.projects p
       WHERE p.project_id = shifts.project_id
       AND (
-        p.created_by = auth.uid()
+        (
+          (auth.jwt() ->> 'org_role_id') = '2'
+          AND p.created_by = auth.uid()
+        )
         OR (auth.jwt() ->> 'org_role_id') = '3'
       )
     )
@@ -81,7 +87,10 @@ CREATE POLICY "shifts_update_lead_board" ON public.shifts
       SELECT 1 FROM public.projects p
       WHERE p.project_id = shifts.project_id
       AND (
-        p.created_by = auth.uid()
+        (
+          (auth.jwt() ->> 'org_role_id') = '2'
+          AND p.created_by = auth.uid()
+        )
         OR (auth.jwt() ->> 'org_role_id') = '3'
       )
     )
@@ -96,7 +105,10 @@ CREATE POLICY "shifts_delete_lead_board" ON public.shifts
       SELECT 1 FROM public.projects p
       WHERE p.project_id = shifts.project_id
       AND (
-        p.created_by = auth.uid()
+        (
+          (auth.jwt() ->> 'org_role_id') = '2'
+          AND p.created_by = auth.uid()
+        )
         OR (auth.jwt() ->> 'org_role_id') = '3'
       )
     )

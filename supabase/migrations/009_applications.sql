@@ -85,6 +85,7 @@ CREATE POLICY "applications_update_lead_own_projects" ON public.applications
     EXISTS (
       SELECT 1 FROM public.projects p
       WHERE p.project_id = applications.project_id
+      AND (auth.jwt() ->> 'org_role_id') = '2'
       AND p.created_by = auth.uid()
     )
   )
@@ -92,6 +93,7 @@ CREATE POLICY "applications_update_lead_own_projects" ON public.applications
     EXISTS (
       SELECT 1 FROM public.projects p
       WHERE p.project_id = applications.project_id
+      AND (auth.jwt() ->> 'org_role_id') = '2'
       AND p.created_by = auth.uid()
     )
   );

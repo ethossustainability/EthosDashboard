@@ -52,7 +52,10 @@ CREATE POLICY "project_roles_insert_lead_board" ON public.project_roles
       SELECT 1 FROM public.projects p
       WHERE p.project_id = project_roles.project_id
       AND (
-        p.created_by = auth.uid()
+        (
+          (auth.jwt() ->> 'org_role_id') = '2'
+          AND p.created_by = auth.uid()
+        )
         OR (auth.jwt() ->> 'org_role_id') = '3'
       )
     )
@@ -67,7 +70,10 @@ CREATE POLICY "project_roles_update_lead_board" ON public.project_roles
       SELECT 1 FROM public.projects p
       WHERE p.project_id = project_roles.project_id
       AND (
-        p.created_by = auth.uid()
+        (
+          (auth.jwt() ->> 'org_role_id') = '2'
+          AND p.created_by = auth.uid()
+        )
         OR (auth.jwt() ->> 'org_role_id') = '3'
       )
     )
@@ -77,7 +83,10 @@ CREATE POLICY "project_roles_update_lead_board" ON public.project_roles
       SELECT 1 FROM public.projects p
       WHERE p.project_id = project_roles.project_id
       AND (
-        p.created_by = auth.uid()
+        (
+          (auth.jwt() ->> 'org_role_id') = '2'
+          AND p.created_by = auth.uid()
+        )
         OR (auth.jwt() ->> 'org_role_id') = '3'
       )
     )
@@ -92,7 +101,10 @@ CREATE POLICY "project_roles_delete_lead_board" ON public.project_roles
       SELECT 1 FROM public.projects p
       WHERE p.project_id = project_roles.project_id
       AND (
-        p.created_by = auth.uid()
+        (
+          (auth.jwt() ->> 'org_role_id') = '2'
+          AND p.created_by = auth.uid()
+        )
         OR (auth.jwt() ->> 'org_role_id') = '3'
       )
     )

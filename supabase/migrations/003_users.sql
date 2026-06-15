@@ -73,6 +73,13 @@ CREATE POLICY "users_select_board" ON public.users
   TO authenticated
   USING ((auth.jwt() ->> 'org_role_id') = '3');
 
+-- Authenticated users can update their own record.
+-- Sensitive-field restrictions are enforced in the API.
+CREATE POLICY "users_update_own" ON public.users
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
 -- Board can update any user
 CREATE POLICY "users_update_board" ON public.users
   FOR UPDATE

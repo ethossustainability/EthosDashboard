@@ -30,6 +30,7 @@ CREATE POLICY "user_badges_insert_lead_participation" ON public.user_badges
       INNER JOIN public.projects p ON p.project_id = b.project_id
       WHERE b.badge_id = user_badges.badge_id
       AND b.badge_category = 'Participation'
+      AND (auth.jwt() ->> 'org_role_id') = '2'
       AND p.created_by = auth.uid()
       AND EXISTS (
         SELECT 1 FROM public.applications a

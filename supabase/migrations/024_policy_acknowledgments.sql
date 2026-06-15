@@ -32,7 +32,14 @@ CREATE POLICY "policy_acknowledgments_select_board" ON public.policy_acknowledgm
 -- User inserts own acknowledgments
 CREATE POLICY "policy_acknowledgments_insert_own" ON public.policy_acknowledgments
   FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (
+    user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM public.files f
+      WHERE f.file_id = policy_acknowledgments.file_id
+      AND f.is_policy = true
+    )
+  );
 
 -- No UPDATE policy: acknowledgments are immutable
 

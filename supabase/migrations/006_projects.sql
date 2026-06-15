@@ -89,15 +89,26 @@ CREATE POLICY "projects_insert_lead_board" ON public.projects
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    ((auth.jwt() ->> 'org_role_id') = '2' OR (auth.jwt() ->> 'org_role_id') = '3')
+    (
+      (auth.jwt() ->> 'org_role_id') = '2'
+      AND created_by = auth.uid()
+      AND chapter_id = (auth.jwt() ->> 'chapter_id')::uuid
+    )
+    OR (auth.jwt() ->> 'org_role_id') = '3'
   );
 
 -- Project Leads can update own projects; Board can update any
 CREATE POLICY "projects_update_lead_own" ON public.projects
   FOR UPDATE
   TO authenticated
-  USING (created_by = auth.uid())
-  WITH CHECK (created_by = auth.uid());
+  USING (
+    (auth.jwt() ->> 'org_role_id') = '2'
+    AND created_by = auth.uid()
+  )
+  WITH CHECK (
+    (auth.jwt() ->> 'org_role_id') = '2'
+    AND created_by = auth.uid()
+  );
 
 CREATE POLICY "projects_update_board" ON public.projects
   FOR UPDATE

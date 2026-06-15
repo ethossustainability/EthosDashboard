@@ -43,6 +43,7 @@ CREATE POLICY "files_insert_lead_own_project" ON public.files
   WITH CHECK (
     (
       category = 'Project'
+      AND (auth.jwt() ->> 'org_role_id') = '2'
       AND EXISTS (
         SELECT 1 FROM public.projects p
         WHERE p.project_id = files.project_id
@@ -58,6 +59,7 @@ CREATE POLICY "files_delete_lead_own_project" ON public.files
   USING (
     (
       category = 'Project'
+      AND (auth.jwt() ->> 'org_role_id') = '2'
       AND EXISTS (
         SELECT 1 FROM public.projects p
         WHERE p.project_id = files.project_id
@@ -65,6 +67,28 @@ CREATE POLICY "files_delete_lead_own_project" ON public.files
       )
     )
     OR (auth.jwt() ->> 'org_role_id') = '3'
+  );
+
+-- Project Leads can update project files on their own projects
+CREATE POLICY "files_update_lead_own_project" ON public.files
+  FOR UPDATE TO authenticated
+  USING (
+    category = 'Project'
+    AND (auth.jwt() ->> 'org_role_id') = '2'
+    AND EXISTS (
+      SELECT 1 FROM public.projects p
+      WHERE p.project_id = files.project_id
+      AND p.created_by = auth.uid()
+    )
+  )
+  WITH CHECK (
+    category = 'Project'
+    AND (auth.jwt() ->> 'org_role_id') = '2'
+    AND EXISTS (
+      SELECT 1 FROM public.projects p
+      WHERE p.project_id = files.project_id
+      AND p.created_by = auth.uid()
+    )
   );
 
 -- Board only can update

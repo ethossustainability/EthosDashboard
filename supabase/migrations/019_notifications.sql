@@ -12,9 +12,17 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     CHECK (channel IN ('Email', 'Slack', 'Both', 'InApp')),
   event_type VARCHAR(100) NOT NULL
     CHECK (event_type IN (
-      'Application Received', 'Approved', 'Rejected',
-      'Task Assigned', 'Task Updated', 'Onboarding Step',
-      'Badge Awarded', 'Role Changed', 'Announcement', 'General'
+      'Application Received',
+      'Application Approved',
+      'Application Rejected',
+      'Task Assigned',
+      'Task Updated',
+      'Onboarding Step',
+      'Badge Awarded',
+      'Role Changed',
+      'Announcement',
+      'Parental Consent Reminder',
+      'General'
     )),
   subject VARCHAR(200),
   body TEXT NOT NULL,
@@ -47,6 +55,8 @@ CREATE POLICY "notifications_select_board" ON public.notifications
 
 -- No INSERT policy: notifications created by service role only
 -- User can mark own notifications as read
+-- NOTE: column-level restriction (is_read and read_at only) enforced in API
+-- PATCH /api/notifications/:id/read uses service role and only updates these two fields
 CREATE POLICY "notifications_update_own_read" ON public.notifications
   FOR UPDATE TO authenticated
   USING (user_id = auth.uid())

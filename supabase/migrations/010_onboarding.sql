@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.onboarding (
   slack_connected_at TIMESTAMP,
   orientation_started_at TIMESTAMP,
   orientation_completed_at TIMESTAMP,
+  -- stored as TEXT, parsed as JSON in application layer
   orientation_progress TEXT,
   waiver_status VARCHAR(50) NOT NULL DEFAULT 'Not Started'
     CHECK (waiver_status IN ('Not Started', 'Sent', 'Signed')),

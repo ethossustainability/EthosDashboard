@@ -41,6 +41,14 @@ ALTER TABLE public.projects
     (is_open_call = true AND open_call_app_level IS NOT NULL)
   );
 
+-- projects: open_call_app_level allowed values
+ALTER TABLE public.projects
+  ADD CONSTRAINT projects_open_call_app_level_values
+  CHECK (
+    open_call_app_level IS NULL
+    OR open_call_app_level IN ('Full App', 'Mid App', 'No App')
+  );
+
 -- badges: Achievement badges must have project_id = null
 ALTER TABLE public.badges
   ADD CONSTRAINT badges_achievement_no_project
@@ -58,6 +66,11 @@ ALTER TABLE public.files
     OR
     (category = 'Project' AND project_id IS NOT NULL)
   );
+
+-- chapters: only one HQ chapter
+CREATE UNIQUE INDEX idx_chapters_one_hq
+  ON public.chapters(is_hq)
+  WHERE is_hq = true;
 
 -- ── Column removal ──
 
