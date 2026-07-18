@@ -1,44 +1,79 @@
-# Ethos App — Session State
+# Ethos App - Session State
 
 ## Phase 3 (lib clients)
-✅ Complete. 6 files in `/lib` including `lib/auth.ts` (shared `extractClaims` utility).
+✅ Complete
 
 ## Phase 4 (API routes)
-🔶 In progress. Completed endpoints:
+✅ Complete - all ~64 endpoints done
+
+## Phase 5 (UI chunks)
+⏳ Not started
+
+## Completed endpoints
 ✅ `POST /api/auth/link-ethos-email`
-✅ `GET /api/users/me` + `PATCH /api/users/me`
+✅ `GET + PATCH /api/users/me`
 ✅ `GET /api/users/:user_id`
 ✅ `PATCH /api/users/:user_id/role`
 ✅ `GET /api/users/directory`
 ✅ `GET /api/chapters`
-✅ `GET /api/projects`
+✅ `GET + POST /api/projects`
 ✅ `GET /api/projects/:project_id`
-✅ `POST /api/projects`
 ✅ `PATCH /api/projects/:project_id`
 ✅ `POST /api/projects/:project_id/publish`
 ✅ `POST /api/projects/:project_id/close`
-✅ `POST /api/projects/:project_id/shifts`
-✅ `PATCH /api/projects/:project_id/shifts/:shift_id`
-✅ `DELETE /api/projects/:project_id/shifts/:shift_id`
-✅ `POST /api/projects/:project_id/roles`
-✅ `PATCH /api/projects/:project_id/roles/:project_role_id`
-✅ `DELETE /api/projects/:project_id/roles/:project_role_id`
+✅ `POST + PATCH + DELETE /api/projects/:project_id/shifts`
+✅ `POST + PATCH + DELETE /api/projects/:project_id/roles`
+✅ `GET + POST /api/applications`
+✅ `PATCH /api/applications/:id/approve`
+✅ `PATCH /api/applications/:id/reject`
+✅ `PATCH /api/applications/:id/withdraw`
+✅ `PATCH /api/applications/:id/reassign-role`
+✅ `GET /api/onboarding/me`
+✅ `POST /api/onboarding/connect-slack`
+✅ `PATCH /api/onboarding/orientation-progress`
+✅ `POST /api/onboarding/send-waiver`
+✅ `POST /api/onboarding/send-parental-consent`
+✅ `POST /api/onboarding/resend-parental-consent`
+✅ `POST /api/webhooks/opensign`
+✅ `POST /api/webhooks/slack/announcements`
+✅ `POST /api/webhooks/slack/project-updates`
+✅ `GET + POST /api/tasks`
+✅ `PATCH + DELETE /api/tasks/:task_id`
+✅ `GET + POST /api/files`
+✅ `DELETE /api/files/:file_id`
+✅ `GET + POST /api/badges`
+✅ `POST /api/badges/:badge_id/award`
+✅ `GET /api/notifications/me`
+✅ `PATCH /api/notifications/:notification_id/read`
+✅ `PATCH /api/notifications/me/read-all`
+✅ `GET + PATCH /api/notification-preferences/me`
+✅ `GET /api/announcements`
+✅ `GET /api/projects/:project_id/updates`
+✅ `GET /api/recents/me`
+✅ `POST /api/recents`
+✅ `GET + POST /api/donations`
+✅ `PATCH + DELETE /api/donations/:donation_id`
+✅ `GET + POST /api/fundraising-contacts`
+✅ `PATCH + DELETE /api/fundraising-contacts/:contact_id`
+✅ `GET /api/org-settings`
+✅ `PATCH /api/org-settings/:key`
+✅ `POST + GET /api/flags`
+✅ `PATCH /api/flags/:flag_id/resolve`
+✅ `GET /api/system-logs`
+✅ `PATCH /api/system-logs/:log_id/resolve`
+✅ `GET + POST /api/policy-acknowledgments/me`
+✅ `PATCH /api/directory-profiles/me`
+✅ `PATCH /api/projects/:project_id/budget`
+✅ `GET /api/search`
 
-**Known bugs fixed:** 
-- Response key mismatches
-- `max_applications` type in `types/projects.ts` updated to `number`
-- `ProjectRole` import corrected
-- `extractClaims` extracted to `lib/auth.ts` and shared across routes
-
-**Known gaps to address later:**
-- Notification delivery not wired (records inserted but no actual email/Slack send triggered)
-- `textSearch` on computed expressions may fall back to `ilike` at runtime
-- OpenSign webhook signature scheme unverified against real docs
-- `RESEND_FROM_ADDRESS` env var value not yet confirmed
-- `SLACK_CLIENT_ID` env var required for Slack OAuth
-- `SLACK_CLIENT_SECRET` env var required for Slack OAuth
-- `OPENSIGN_WAIVER_TEMPLATE_ID` and `CONSENT_TEMPLATE_ID` not yet created
-- `slack_invite_link` must be manually set in `org_settings` after setup
-
-**Remaining endpoints (roughly 45):** 
-Applications, Onboarding + webhooks, Tasks, Files, Badges, Notifications, Announcements + webhooks, Project Updates, Recents, Fundraising, Org Settings, Volunteer Flags, System Logs, Policy Acknowledgments, Directory Profiles, Budget, Search.
+## Known gaps (address after routes / during hardening)
+- Notification delivery not wired (records inserted, no actual send)
+- Shared `requireUser` helper not extracted yet
+- OpenSign webhook header/scheme unverified
+- `RESEND_FROM_ADDRESS` not confirmed
+- OpenSign template IDs not created yet
+- `slack_invite_link` must be set in `org_settings`
+- `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET` added to env vars list
+- `textSearch` on computed expressions may fall back to `ilike`
+- `hydrateTasks` empty array guard (check against `hydrateFiles` pattern)
+- Webhook insert failures swallowed silently - add `system_logs` on failure
