@@ -99,3 +99,23 @@ export function verifySlackSignature(signature: string, timestamp: string, rawBo
     return false;
   }
 }
+
+export async function inviteToChannel(channelId: string, userIds: string[]) {
+  if (!slackBotToken) throw new Error('Missing SLACK_BOT_TOKEN');
+
+  const res = await fetch('https://slack.com/api/conversations.invite', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${slackBotToken}`,
+    },
+    body: JSON.stringify({
+      channel: channelId,
+      users: userIds.join(','),
+    }),
+  });
+
+  const data = await res.json();
+  if (!data.ok) throw new Error(`Slack API error (conversations.invite): ${data.error}`);
+  return data;
+}

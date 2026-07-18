@@ -287,6 +287,8 @@ All stored in Vercel environment variables. Never committed to version control.
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | Frontend Supabase client |
 | SUPABASE_SERVICE_ROLE_KEY | Server-side operations bypassing RLS |
 | SLACK_BOT_TOKEN | Slack API calls (channel creation, DMs) |
+| SLACK_CLIENT_ID | Slack OAuth app client ID |
+| SLACK_CLIENT_SECRET | Slack OAuth app client secret |
 | SLACK_SIGNING_SECRET | Webhook payload verification |
 | OPENSIGN_WEBHOOK_SECRET | OpenSign webhook verification |
 | RESEND_API_KEY | Email sending |
