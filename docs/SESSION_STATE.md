@@ -7,7 +7,11 @@
 ✅ Complete - all ~64 endpoints done
 
 ## Phase 5 (UI chunks)
-⏳ Not started
+🔶 In progress
+
+## UI chunks
+✅ Chunk 1: Complete
+⏳ Chunks 2-6: Not started
 
 ## Completed endpoints
 ✅ `POST /api/auth/link-ethos-email`
