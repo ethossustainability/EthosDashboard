@@ -5,7 +5,7 @@ type InputProps = {
   placeholder?: string;
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'email' | 'tel' | 'date';
+  type?: 'text' | 'email' | 'tel' | 'date' | 'number' | 'datetime-local';
   error?: string;
   disabled?: boolean;
   name?: string;

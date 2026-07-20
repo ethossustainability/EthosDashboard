@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Task } from '@/types/tasks';
 import { ProjectTaskControls } from '@/components/project-detail/ProjectTaskControls';
 import { ProjectTaskKanbanView } from '@/components/project-detail/ProjectTaskKanbanView';
@@ -22,6 +23,7 @@ type ProjectTasksTabProps = {
   currentUserId: string;
   isLead: boolean;
   isBoard: boolean;
+  actions?: ReactNode;
 };
 
 export function ProjectTasksTab({
@@ -29,6 +31,7 @@ export function ProjectTasksTab({
   currentUserId,
   isLead,
   isBoard,
+  actions = null,
 }: ProjectTasksTabProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [groupBy, setGroupBy] = useState<GroupBy>('status');
@@ -51,6 +54,7 @@ export function ProjectTasksTab({
           <h2 className="text-xl font-bold text-espresso">Tasks</h2>
           <p className="mt-1 text-sm text-warm-gray">{remainingCount} tasks remaining</p>
         </div>
+        {actions}
       </div>
 
       <div className="mb-8">

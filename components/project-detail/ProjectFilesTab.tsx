@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import type { File } from '@/types/files';
 import { FileCard } from '@/components/files/FileCard';
 import { Input } from '@/components/ui/Input';
@@ -12,6 +13,7 @@ type ProjectFile = File & {
 
 type ProjectFilesTabProps = {
   files: ProjectFile[];
+  actions?: ReactNode;
 };
 
 function matchesSearch(file: ProjectFile, search: string) {
@@ -24,20 +26,21 @@ function matchesSearch(file: ProjectFile, search: string) {
   );
 }
 
-export function ProjectFilesTab({ files }: ProjectFilesTabProps) {
+export function ProjectFilesTab({ files, actions = null }: ProjectFilesTabProps) {
   const [search, setSearch] = useState('');
 
   const filteredFiles = files.filter((file) => matchesSearch(file, search));
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <Input
           value={search}
           onChange={setSearch}
           placeholder="Search files..."
           name="project-file-search"
         />
+        {actions}
       </div>
 
       {filteredFiles.length > 0 ? (
