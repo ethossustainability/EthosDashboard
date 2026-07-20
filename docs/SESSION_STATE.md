@@ -12,7 +12,8 @@
 ## UI chunks
 ✅ Chunk 1: Complete
 ✅ Chunk 2: Complete
-⏳ Chunks 3-6: Not started
+✅ Chunk 3: Complete
+⏳ Chunks 4-6: Not started
 
 ## Completed endpoints
 ✅ `POST /api/auth/link-ethos-email`
