@@ -12,8 +12,9 @@ type Volunteer = {
 };
 
 type AwardBadgeSheetProps = {
-  projectId: string;
+  projectId?: string;
   volunteer: Volunteer;
+  badgeFilter?: 'Participation' | 'Achievement';
   onClose: () => void;
   onAwarded: () => void;
 };
@@ -32,6 +33,7 @@ function extractBadges(data: BadgesResponse['data']): Badge[] {
 export function AwardBadgeSheet({
   projectId,
   volunteer,
+  badgeFilter = 'Participation',
   onClose,
   onAwarded,
 }: AwardBadgeSheetProps) {
@@ -60,10 +62,13 @@ export function AwardBadgeSheet({
         return;
       }
 
+      const allBadges = extractBadges(body.data);
       setBadges(
-        extractBadges(body.data).filter(
-          (badge) => badge.badge_category === 'Participation' && badge.project_id === projectId,
-        ),
+        badgeFilter === 'Achievement'
+          ? allBadges.filter((badge) => badge.badge_category === 'Achievement')
+          : allBadges.filter(
+              (badge) => badge.badge_category === 'Participation' && badge.project_id === projectId,
+            ),
       );
       setIsLoading(false);
     }
@@ -73,7 +78,7 @@ export function AwardBadgeSheet({
     return () => {
       isMounted = false;
     };
-  }, [projectId]);
+  }, [badgeFilter, projectId]);
 
   async function handleAward() {
     if (!selectedBadgeId) return;
@@ -129,7 +134,9 @@ export function AwardBadgeSheet({
 
           {!isLoading && badges.length === 0 ? (
             <p className="rounded-xl border border-sand bg-sand/30 p-4 text-sm text-warm-gray">
-              No participation badges have been created for this project. Contact the Board to set one up.
+              {badgeFilter === 'Achievement'
+                ? 'No achievement badges have been created yet.'
+                : 'No participation badges have been created for this project. Contact the Board to set one up.'}
             </p>
           ) : null}
 

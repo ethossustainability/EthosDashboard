@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import type { ApiResponse } from '@/types/api';
+import { AddFileSheet } from '@/components/project-detail/AddFileSheet';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
@@ -16,6 +17,7 @@ export type PolicyDocument = {
 
 type PolicyDocumentListProps = {
   documents: PolicyDocument[];
+  isBoard?: boolean;
 };
 
 type AcknowledgeResponse = {
@@ -25,9 +27,10 @@ type AcknowledgeResponse = {
   acknowledged_at: string;
 };
 
-export function PolicyDocumentList({ documents }: PolicyDocumentListProps) {
+export function PolicyDocumentList({ documents, isBoard = false }: PolicyDocumentListProps) {
   const [policyDocuments, setPolicyDocuments] = useState(documents);
   const [message, setMessage] = useState('');
+  const [addPolicyOpen, setAddPolicyOpen] = useState(false);
   const allAcknowledged =
     policyDocuments.length > 0 && policyDocuments.every((document) => document.acknowledged);
 
@@ -78,6 +81,14 @@ export function PolicyDocumentList({ documents }: PolicyDocumentListProps) {
 
   return (
     <div className="rounded-xl border border-sand bg-cream">
+      {isBoard ? (
+        <div className="flex justify-end border-b border-sand px-5 py-4">
+          <Button variant="primary" size="sm" onClick={() => setAddPolicyOpen(true)}>
+            Add Policy Document
+          </Button>
+        </div>
+      ) : null}
+
       {allAcknowledged ? (
         <div className="border-b border-sand px-5 py-4 text-sm font-semibold text-green-700">
           All documents reviewed ✓
@@ -124,6 +135,27 @@ export function PolicyDocumentList({ documents }: PolicyDocumentListProps) {
       )}
 
       {message ? <p className="border-t border-sand px-5 py-3 text-sm text-red-500">{message}</p> : null}
+
+      {addPolicyOpen ? (
+        <AddFileSheet
+          forceCategory="Universal"
+          forceIsPolicy
+          onClose={() => setAddPolicyOpen(false)}
+          onAdded={(file) => {
+            setPolicyDocuments((current) => [
+              {
+                file_id: file.file_id,
+                file_name: file.file_name,
+                drive_url: file.drive_url,
+                acknowledged: false,
+                acknowledged_at: null,
+              },
+              ...current,
+            ]);
+            setAddPolicyOpen(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

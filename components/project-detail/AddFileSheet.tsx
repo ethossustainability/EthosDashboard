@@ -8,7 +8,9 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 
 type AddFileSheetProps = {
-  projectId: string;
+  projectId?: string | null;
+  forceCategory?: 'Project' | 'Universal';
+  forceIsPolicy?: boolean;
   onClose: () => void;
   onAdded: (file: File) => void;
 };
@@ -34,13 +36,20 @@ function nameFromUrl(value: string) {
   }
 }
 
-export function AddFileSheet({ projectId, onClose, onAdded }: AddFileSheetProps) {
+export function AddFileSheet({
+  projectId = null,
+  forceCategory,
+  forceIsPolicy = false,
+  onClose,
+  onAdded,
+}: AddFileSheetProps) {
   const [driveUrl, setDriveUrl] = useState('');
   const [fileName, setFileName] = useState('');
   const [fileType, setFileType] = useState('PDF');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const category = forceCategory ?? 'Project';
 
   function handleDriveUrlChange(value: string) {
     setDriveUrl(value);
@@ -55,6 +64,11 @@ export function AddFileSheet({ projectId, onClose, onAdded }: AddFileSheetProps)
       return;
     }
 
+    if (category === 'Project' && !projectId) {
+      setError('Project files require a project.');
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
 
@@ -62,12 +76,13 @@ export function AddFileSheet({ projectId, onClose, onAdded }: AddFileSheetProps)
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        project_id: projectId,
+        project_id: category === 'Project' ? projectId : null,
         drive_url: driveUrl.trim(),
         file_name: fileName.trim(),
         file_type: fileType,
-        category: 'Project',
+        category,
         description: description.trim() || null,
+        ...(forceIsPolicy ? { is_policy: true } : {}),
       }),
     });
 

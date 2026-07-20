@@ -40,6 +40,16 @@ type FilesResponse = {
   per_page: number;
 };
 
+function decodeRoleId(accessToken: string) {
+  const payload = accessToken.split('.')[1];
+  if (!payload) return 1;
+
+  const parsed = JSON.parse(atob(payload)) as unknown;
+  if (!parsed || typeof parsed !== 'object' || !('org_role_id' in parsed)) return 1;
+
+  return Number(parsed.org_role_id);
+}
+
 export default async function TrainingPage() {
   const cookieStore = await cookies();
   const headerStore = await headers();
@@ -77,6 +87,7 @@ export default async function TrainingPage() {
   const headersWithAuth = {
     Authorization: `Bearer ${session.access_token}`,
   };
+  const isBoard = decodeRoleId(session.access_token) === 3;
 
   const [onboardingResponse, acknowledgmentsResponse, filesResponse] = await Promise.all([
     fetch(`${protocol}://${host}/api/onboarding/me`, {
@@ -131,7 +142,7 @@ export default async function TrainingPage() {
         <div className="mb-4">
           <h2 className="text-xl font-bold text-espresso">Policy Documents</h2>
         </div>
-        <PolicyDocumentList documents={documents} />
+        <PolicyDocumentList documents={documents} isBoard={isBoard} />
       </section>
     </div>
   );

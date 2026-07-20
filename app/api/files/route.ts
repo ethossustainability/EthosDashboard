@@ -26,6 +26,7 @@ type CreateFileInput = {
   file_type: string;
   category: FileCategory;
   description?: string | null;
+  is_policy?: boolean;
 };
 
 type ProjectOwnerRow = {
@@ -68,7 +69,8 @@ function isCreateFileInput(value: unknown): value is CreateFileInput {
     typeof body.file_type === 'string' &&
     body.file_type.trim().length > 0 &&
     isFileCategory(body.category) &&
-    (body.description === undefined || body.description === null || typeof body.description === 'string')
+    (body.description === undefined || body.description === null || typeof body.description === 'string') &&
+    (body.is_policy === undefined || typeof body.is_policy === 'boolean')
   );
 }
 
@@ -243,6 +245,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<F
       );
     }
 
+    if (body.is_policy === true && claims.org_role_id !== 3) {
+      return NextResponse.json(
+        { data: null, error: { code: 'FORBIDDEN', message: 'Only Board can add policy documents' } },
+        { status: 403 }
+      );
+    }
+
     const driveFileId = extractFileIdFromUrl(body.drive_url);
     if (!driveFileId) {
       return NextResponse.json(
@@ -283,6 +292,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<F
         file_type: body.file_type.trim(),
         category: body.category,
         description: body.description ?? null,
+        is_policy: body.is_policy ?? false,
         added_by: claims.sub,
       })
       .select()

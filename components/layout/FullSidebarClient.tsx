@@ -4,25 +4,30 @@ import type * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { FullSidebarLayout } from './FullSidebarLayout';
 
+type OrgRoleId = 1 | 2 | 3;
+
 type FullSidebarClientProps = {
   children: React.ReactNode;
   firstName: string;
   lastName: string;
-  navItems?: React.ReactNode;
+  orgRoleId: OrgRoleId;
+  unresolvedLogCount: number;
 };
 
 export function FullSidebarClient({
   children,
   firstName,
   lastName,
-  navItems = null,
+  orgRoleId,
+  unresolvedLogCount,
 }: FullSidebarClientProps) {
   const router = useRouter();
 
   return (
     <FullSidebarLayout
       user={{ firstName, lastName }}
-      navItems={navItems}
+      orgRoleId={orgRoleId}
+      unresolvedLogCount={unresolvedLogCount}
       onAvatarClick={() => {
         router.push('/account');
       }}

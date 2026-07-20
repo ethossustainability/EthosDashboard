@@ -3,6 +3,9 @@
 import type * as React from 'react';
 import { EthosLogo } from './EthosLogo';
 import { ProfileAvatarButton } from './ProfileAvatarButton';
+import { SidebarNav } from './SidebarNav';
+
+type OrgRoleId = 1 | 2 | 3;
 
 type FullSidebarLayoutProps = {
   children: React.ReactNode;
@@ -11,14 +14,16 @@ type FullSidebarLayoutProps = {
     lastName: string;
   };
   onAvatarClick: () => void;
-  navItems?: React.ReactNode;
+  orgRoleId: OrgRoleId;
+  unresolvedLogCount: number;
 };
 
 export function FullSidebarLayout({
   children,
   user,
   onAvatarClick,
-  navItems = null,
+  orgRoleId,
+  unresolvedLogCount,
 }: FullSidebarLayoutProps) {
   return (
     <div className="flex min-h-screen bg-cream text-espresso">
@@ -28,7 +33,7 @@ export function FullSidebarLayout({
         </div>
 
         <nav className="flex-1 px-3 py-4" aria-label="Primary navigation">
-          {navItems}
+          <SidebarNav orgRoleId={orgRoleId} unresolvedLogCount={unresolvedLogCount} />
         </nav>
 
         <div className="border-t border-cream/10 px-4 py-4">
