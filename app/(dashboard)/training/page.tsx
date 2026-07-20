@@ -9,6 +9,7 @@ import {
   type PolicyDocument,
 } from '@/components/training/PolicyDocumentList';
 import { TrainingOrientation } from '@/components/training/TrainingOrientation';
+import { decodeRoleId } from '@/lib/decode-role';
 
 const emptyProgress: OrientationProgress = {
   welcome: false,
@@ -39,16 +40,6 @@ type FilesResponse = {
   page: number;
   per_page: number;
 };
-
-function decodeRoleId(accessToken: string) {
-  const payload = accessToken.split('.')[1];
-  if (!payload) return 1;
-
-  const parsed = JSON.parse(atob(payload)) as unknown;
-  if (!parsed || typeof parsed !== 'object' || !('org_role_id' in parsed)) return 1;
-
-  return Number(parsed.org_role_id);
-}
 
 export default async function TrainingPage() {
   const cookieStore = await cookies();

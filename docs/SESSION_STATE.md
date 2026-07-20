@@ -7,7 +7,7 @@
 ✅ Complete - all ~64 endpoints done
 
 ## Phase 5 (UI chunks)
-🔶 In progress
+✅ Complete
 
 ## UI chunks
 ? Chunk 1: Complete
@@ -15,7 +15,7 @@
 ? Chunk 3: Complete
 ? Chunk 4: Complete
 ? Chunk 5: Complete
-? Chunk 6: Not started
+✅ Chunk 6: Complete
 
 ## Completed endpoints
 ✅ `POST /api/auth/link-ethos-email`
@@ -74,14 +74,48 @@
 ✅ `PATCH /api/projects/:project_id/budget`
 ✅ `GET /api/search`
 
-## Known gaps (address after routes / during hardening)
-- Notification delivery not wired (records inserted, no actual send)
-- Shared `requireUser` helper not extracted yet
-- OpenSign webhook header/scheme unverified
-- `RESEND_FROM_ADDRESS` not confirmed
-- OpenSign template IDs not created yet
-- `slack_invite_link` must be set in `org_settings`
-- `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET` added to env vars list
-- `textSearch` on computed expressions may fall back to `ilike`
-- `hydrateTasks` empty array guard (check against `hydrateFiles` pattern)
-- Webhook insert failures swallowed silently - add `system_logs` on failure
+## MUST DO BEFORE DEPLOY
+
+1. On a network without SSL interception, run:
+   `npm install @supabase/ssr`
+   Then delete `types/supabase-ssr.d.ts` (the shim).
+
+2. Set all environment variables in Vercel:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `SLACK_BOT_TOKEN`
+   - `SLACK_SIGNING_SECRET`
+   - `SLACK_CLIENT_ID`
+   - `SLACK_CLIENT_SECRET`
+   - `OPENSIGN_WEBHOOK_SECRET`
+   - `OPENSIGN_WAIVER_TEMPLATE_ID`
+   - `OPENSIGN_CONSENT_TEMPLATE_ID`
+   - `RESEND_API_KEY`
+   - `RESEND_FROM_ADDRESS` (confirm with Ethos - likely `info@ethossustainability.org`)
+   - `GOOGLE_DRIVE_CLIENT_ID`
+   - `GOOGLE_DRIVE_CLIENT_SECRET`
+
+3. Register JWT hook in Supabase Dashboard:
+   Authentication -> Hooks -> Custom Access Token -> set to `public.custom_access_token_hook`
+
+4. Run all 28 SQL migrations in Supabase SQL editor in order (`000` through `027`).
+
+5. In Supabase, manually set `org_settings` values:
+   - `slack_invite_link`: your Ethos workspace invite URL
+   - `slack_announcements_channel_id`: the `#announcements` Slack channel ID
+
+6. Create OpenSign document templates for:
+   - Ethos liability waiver
+   - Parental consent form
+   Then set `OPENSIGN_WAIVER_TEMPLATE_ID` and `OPENSIGN_CONSENT_TEMPLATE_ID` in Vercel env vars.
+
+7. Install `@dnd-kit` after npm is restored for kanban drag-and-drop:
+   `npm install @dnd-kit/core @dnd-kit/sortable`
+
+## KNOWN REMAINING CODE GAPS
+
+- Notification delivery not wired (records inserted but no actual email/Slack sends triggered)
+- OpenSign webhook header name unverified against real OpenSign docs
+- Kanban drag-and-drop deferred pending `@dnd-kit` install
+- `requireUser` helper not extracted (low priority)

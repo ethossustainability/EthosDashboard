@@ -109,6 +109,10 @@ async function getAuthorizedProjectIds(userId: string, roleId: number, projectId
 }
 
 async function hydrateTasks(tasks: Task[]): Promise<TaskListItem[]> {
+  if (tasks.length === 0) {
+    return [];
+  }
+
   const projectIds = Array.from(new Set(tasks.map((task) => task.project_id)));
   const assigneeIds = Array.from(new Set(tasks.flatMap((task) => task.assigned_to ? [task.assigned_to] : [])));
 

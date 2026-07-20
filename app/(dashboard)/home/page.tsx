@@ -7,6 +7,7 @@ import type { ApiResponse } from '@/types/api';
 import type { Task } from '@/types/tasks';
 import { Tag } from '@/components/ui/Tag';
 import { MetricCard } from '@/components/dashboard/MetricCard';
+import { decodeRoleId } from '@/lib/decode-role';
 
 type CurrentUser = {
   first_name: string;
@@ -97,20 +98,6 @@ function getProjectTag(projectTypeId: number) {
   return { label: 'HQ', color: 'sand' as const };
 }
 
-function decodeBoardRole(accessToken: string) {
-  try {
-    const payload = accessToken.split('.')[1];
-    if (!payload) return false;
-
-    const parsed = JSON.parse(atob(payload)) as unknown;
-    if (!parsed || typeof parsed !== 'object' || !('org_role_id' in parsed)) return false;
-
-    return Number(parsed.org_role_id) === 3;
-  } catch {
-    return false;
-  }
-}
-
 export default async function HomePage() {
   const cookieStore = await cookies();
   const headerStore = await headers();
@@ -138,7 +125,7 @@ export default async function HomePage() {
     redirect('/login');
   }
 
-  const isBoard = decodeBoardRole(session.access_token);
+  const isBoard = decodeRoleId(session.access_token) === 3;
   const boardMetricHref = isBoard ? '/board/overview' : undefined;
 
   const monthStart = new Date();

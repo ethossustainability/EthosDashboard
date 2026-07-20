@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
 import { FullSidebarClient } from '@/components/layout/FullSidebarClient';
+import { decodeRoleId } from '@/lib/decode-role';
 
 type DashboardLayoutProps = {
   children: React.ReactNode;
@@ -12,19 +13,6 @@ type CurrentUser = {
   first_name: string;
   last_name: string;
 };
-
-type OrgRoleId = 1 | 2 | 3;
-
-function decodeRoleId(accessToken: string): OrgRoleId {
-  const payload = accessToken.split('.')[1];
-  if (!payload) return 1;
-
-  const parsed = JSON.parse(atob(payload)) as unknown;
-  if (!parsed || typeof parsed !== 'object' || !('org_role_id' in parsed)) return 1;
-
-  const roleId = Number(parsed.org_role_id);
-  return roleId === 2 || roleId === 3 ? roleId : 1;
-}
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
   const cookieStore = await cookies();
@@ -52,7 +40,8 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
     redirect('/login');
   }
 
-  const orgRoleId = decodeRoleId(session.access_token);
+  const decodedRoleId = decodeRoleId(session.access_token);
+  const orgRoleId = decodedRoleId === 2 || decodedRoleId === 3 ? decodedRoleId : 1;
 
   const [{ data }, unresolvedLogResult] = await Promise.all([
     supabase

@@ -4,19 +4,9 @@ import { createServerClient } from '@supabase/ssr';
 import type { Chapter } from '@/types/chapters';
 import type { ProjectType } from '@/types/projects';
 import { CreateProjectWizard } from '@/components/lead/project-wizard/CreateProjectWizard';
+import { decodeRoleId } from '@/lib/decode-role';
 
 type ChapterOption = Pick<Chapter, 'chapter_id' | 'name' | 'is_hq' | 'location'>;
-
-function decodeRoleId(accessToken: string) {
-  const payload = accessToken.split('.')[1];
-  if (!payload) return null;
-
-  const parsed = JSON.parse(atob(payload)) as unknown;
-  if (!parsed || typeof parsed !== 'object' || !('org_role_id' in parsed)) return null;
-
-  const roleId = Number(parsed.org_role_id);
-  return Number.isNaN(roleId) ? null : roleId;
-}
 
 function decodeChapterId(accessToken: string) {
   const payload = accessToken.split('.')[1];

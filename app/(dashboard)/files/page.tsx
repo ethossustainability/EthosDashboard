@@ -10,6 +10,7 @@ import { FileFilters } from '@/components/files/FileFilters';
 import { AddFileSheet } from '@/components/project-detail/AddFileSheet';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { decodeRoleId } from '@/lib/decode-role';
 
 type FileCategoryFilter = 'all' | 'Project' | 'Universal';
 
@@ -49,16 +50,6 @@ function matchesSearch(file: FileListItem, search: string) {
     file.file_name.toLowerCase().includes(term) ||
     (file.description ?? '').toLowerCase().includes(term)
   );
-}
-
-function decodeRoleId(accessToken: string) {
-  const payload = accessToken.split('.')[1];
-  if (!payload) return 1;
-
-  const parsed = JSON.parse(atob(payload)) as unknown;
-  if (!parsed || typeof parsed !== 'object' || !('org_role_id' in parsed)) return 1;
-
-  return Number(parsed.org_role_id);
 }
 
 export default function FilesPage() {

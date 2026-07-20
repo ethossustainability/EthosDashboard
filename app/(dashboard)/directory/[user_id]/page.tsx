@@ -8,6 +8,7 @@ import type { OrgRoleId } from '@/types/auth';
 import { BoardProfileActions } from '@/components/directory/BoardProfileActions';
 import { Badge } from '@/components/ui/Badge';
 import { Tag } from '@/components/ui/Tag';
+import { decodeRoleId } from '@/lib/decode-role';
 
 type DirectoryBadge = {
   badge_id: string;
@@ -81,16 +82,6 @@ function formatDate(value: string) {
     day: 'numeric',
     year: 'numeric',
   }).format(new Date(value));
-}
-
-function decodeRoleId(accessToken: string) {
-  const payload = accessToken.split('.')[1];
-  if (!payload) return 1;
-
-  const parsed = JSON.parse(atob(payload)) as unknown;
-  if (!parsed || typeof parsed !== 'object' || !('org_role_id' in parsed)) return 1;
-
-  return Number(parsed.org_role_id);
 }
 
 function getVotySubtitle(badges: DirectoryBadge[]) {
