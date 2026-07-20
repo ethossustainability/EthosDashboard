@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
+import type { Announcement } from '@/types/announcements';
 import type { ApiResponse } from '@/types/api';
 import type { Task } from '@/types/tasks';
 import { Tag } from '@/components/ui/Tag';
@@ -68,6 +69,13 @@ function formatShiftDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatAnnouncementDate(value: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(value));
+}
+
 function getApprovedProject(application: ApprovedApplication | null) {
   return Array.isArray(application?.projects)
     ? application?.projects[0]
@@ -87,6 +95,20 @@ function getProjectTag(projectTypeId: number) {
   if (projectTypeId === 2) return { label: 'Campaign', color: 'peach' as const };
   if (projectTypeId === 3) return { label: 'Program', color: 'blue' as const };
   return { label: 'HQ', color: 'sand' as const };
+}
+
+function decodeBoardRole(accessToken: string) {
+  try {
+    const payload = accessToken.split('.')[1];
+    if (!payload) return false;
+
+    const parsed = JSON.parse(atob(payload)) as unknown;
+    if (!parsed || typeof parsed !== 'object' || !('org_role_id' in parsed)) return false;
+
+    return Number(parsed.org_role_id) === 3;
+  } catch {
+    return false;
+  }
 }
 
 export default async function HomePage() {
@@ -116,6 +138,9 @@ export default async function HomePage() {
     redirect('/login');
   }
 
+  const isBoard = decodeBoardRole(session.access_token);
+  const boardMetricHref = isBoard ? '/board/overview' : undefined;
+
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
@@ -127,6 +152,7 @@ export default async function HomePage() {
     { count: eventsThisMonthCount },
     { data: donationData },
     { data: applicationData },
+    { data: announcementsData },
   ] = await Promise.all([
     supabase
       .from('users')
@@ -169,11 +195,17 @@ export default async function HomePage() {
       .order('reviewed_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from('announcements')
+      .select('*')
+      .order('posted_at', { ascending: false })
+      .limit(3),
   ]);
 
   const user = userData as CurrentUser | null;
   const donations = (donationData ?? []) as DonationAmount[];
   const application = applicationData as ApprovedApplication | null;
+  const announcements = (announcementsData ?? []) as Announcement[];
   const project = getApprovedProject(application);
   const upcomingShift = getUpcomingShift(project);
   const projectTag = project ? getProjectTag(project.project_type_id) : null;
@@ -215,10 +247,10 @@ export default async function HomePage() {
       </header>
 
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Active projects" value={activeProjectsCount ?? 0} />
-        <MetricCard label="Total members" value={totalMembersCount ?? 0} />
-        <MetricCard label="Events this month" value={eventsThisMonthCount ?? 0} />
-        <MetricCard label="Funds raised" value={`$${fundsRaised.toLocaleString()}`} />
+        <MetricCard label="Active projects" value={activeProjectsCount ?? 0} href={boardMetricHref} />
+        <MetricCard label="Total members" value={totalMembersCount ?? 0} href={boardMetricHref} />
+        <MetricCard label="Events this month" value={eventsThisMonthCount ?? 0} href={boardMetricHref} />
+        <MetricCard label="Funds raised" value={`$${fundsRaised.toLocaleString()}`} href={boardMetricHref} />
       </section>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1fr]">
@@ -268,6 +300,38 @@ export default async function HomePage() {
           )}
         </section>
       </div>
+
+      {announcements.length > 0 ? (
+        <section className="mt-8">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="text-lg font-bold text-espresso">Announcements</h2>
+            <Link href="/announcements" className="text-sm font-semibold text-espresso underline">
+              See all
+            </Link>
+          </div>
+
+          <div>
+            {announcements.map((announcement) => (
+              <article
+                key={announcement.announcement_id}
+                className="mb-3 rounded-xl border border-sand bg-cream p-4 last:mb-0"
+              >
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-warm-gray">
+                    {announcement.posted_by_slack_user}
+                  </p>
+                  <p className="text-xs text-warm-gray">
+                    {formatAnnouncementDate(announcement.posted_at)}
+                  </p>
+                </div>
+                <p className="line-clamp-2 text-sm leading-6 text-brown-mid">
+                  {announcement.content}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

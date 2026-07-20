@@ -26,6 +26,7 @@ const navItems: NavItem[] = [
   { label: 'My Files', href: '/files' },
   { label: 'Training', href: '/training' },
   { label: 'Fundraising', href: '/fundraising' },
+  { label: 'Announcements', href: '/announcements' },
   { label: 'Recents', href: '/recents' },
   { label: 'My Lead Projects', href: '/lead-projects', leadOnly: true },
   { label: 'Board Panel', href: '/board/overview', boardOnly: true, isBoardPanel: true },

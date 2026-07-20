@@ -20,6 +20,8 @@ type ApplicationFormProps = {
   project: Project;
   shifts: Shift[];
   user: ApplicationFormUser;
+  maxSteps?: 2 | 4;
+  onSubmitted?: (applicationId: string) => void;
 };
 
 type ApplicationFormData = {
@@ -34,7 +36,10 @@ type ApplicationFormData = {
   experience: string;
 };
 
-const steps = ['Basics', 'About you', 'Availability', 'Submit'];
+const stepLabels = {
+  2: ['Basics', 'Submit'],
+  4: ['Basics', 'About you', 'Availability', 'Submit'],
+};
 
 function formatShift(shift: Shift) {
   const start = new Date(shift.start_datetime);
@@ -51,8 +56,16 @@ function formatShift(shift: Shift) {
   }).format(end)}`;
 }
 
-export function ApplicationForm({ project, shifts, user }: ApplicationFormProps) {
+export function ApplicationForm({
+  project,
+  shifts,
+  user,
+  maxSteps = 4,
+  onSubmitted,
+}: ApplicationFormProps) {
   const router = useRouter();
+  const steps = stepLabels[maxSteps];
+  const submitStep = maxSteps;
   const [currentStep, setCurrentStep] = useState(1);
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,7 +95,7 @@ export function ApplicationForm({ project, shifts, user }: ApplicationFormProps)
   }
 
   function goNext() {
-    if (currentStep < 4) {
+    if (currentStep < submitStep) {
       setCurrentStep((step) => step + 1);
       return;
     }
@@ -93,7 +106,7 @@ export function ApplicationForm({ project, shifts, user }: ApplicationFormProps)
   async function submitApplication() {
     setSubmitError('');
 
-    if (!formData.why_join.trim()) {
+    if (maxSteps === 4 && !formData.why_join.trim()) {
       setSubmitError('Please tell us why you want to join before submitting.');
       return;
     }
@@ -112,8 +125,8 @@ export function ApplicationForm({ project, shifts, user }: ApplicationFormProps)
       },
       body: JSON.stringify({
         project_id: project.project_id,
-        why_join: formData.why_join,
-        experience: formData.experience || null,
+        why_join: maxSteps === 2 ? 'Mid application submitted.' : formData.why_join,
+        experience: maxSteps === 2 ? null : formData.experience || null,
         availability_notes: null,
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -126,9 +139,14 @@ export function ApplicationForm({ project, shifts, user }: ApplicationFormProps)
 
     const body = (await response.json()) as ApiResponse<{ application_id: string }>;
 
-    if (!response.ok || body.error) {
+    if (!response.ok || body.error || !body.data) {
       setSubmitError(body.error?.message ?? 'Something went wrong. Please try again.');
       setIsSubmitting(false);
+      return;
+    }
+
+    if (onSubmitted) {
+      onSubmitted(body.data.application_id);
       return;
     }
 
@@ -144,7 +162,13 @@ export function ApplicationForm({ project, shifts, user }: ApplicationFormProps)
             style={{ width: `${(currentStep / steps.length) * 100}%` }}
           />
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-2 text-xs font-semibold text-warm-gray">
+        <div
+          className={
+            maxSteps === 2
+              ? 'mt-3 grid grid-cols-2 gap-2 text-xs font-semibold text-warm-gray'
+              : 'mt-3 grid grid-cols-4 gap-2 text-xs font-semibold text-warm-gray'
+          }
+        >
           {steps.map((step, index) => (
             <span key={step} className={index + 1 <= currentStep ? 'text-espresso' : ''}>
               {step}
@@ -188,7 +212,7 @@ export function ApplicationForm({ project, shifts, user }: ApplicationFormProps)
         </div>
       ) : null}
 
-      {currentStep === 2 ? (
+      {maxSteps === 4 && currentStep === 2 ? (
         <div className="space-y-5">
           <Textarea
             label="Why do you want to join?"
@@ -207,7 +231,7 @@ export function ApplicationForm({ project, shifts, user }: ApplicationFormProps)
         </div>
       ) : null}
 
-      {currentStep === 3 ? (
+      {maxSteps === 4 && currentStep === 3 ? (
         <div className="space-y-4">
           {shifts.length > 0 ? (
             shifts.map((shift) => (
@@ -229,7 +253,7 @@ export function ApplicationForm({ project, shifts, user }: ApplicationFormProps)
         </div>
       ) : null}
 
-      {currentStep === 4 ? (
+      {currentStep === submitStep ? (
         <div className="space-y-5">
           <div className="rounded-lg border border-sand p-4">
             <h2 className="font-semibold text-espresso">Application summary</h2>
@@ -263,7 +287,7 @@ export function ApplicationForm({ project, shifts, user }: ApplicationFormProps)
         )}
 
         <Button onClick={goNext} disabled={isSubmitting}>
-          {currentStep === 4 ? (isSubmitting ? 'Submitting...' : 'Submit') : 'Next'}
+          {currentStep === submitStep ? (isSubmitting ? 'Submitting...' : 'Submit') : 'Next'}
         </Button>
       </div>
     </div>
