@@ -14,5 +14,5 @@ jobs:
         env:
           TOKEN: ${{ secrets.PERSONAL_REPO_TOKEN }}
         run: |
-          git remote add personal https://ethossustainability:${TOKEN}@github.com/ethossustainability/ethosdashboard.git
+          git remote add personal https://ethossustainability:${PERSONAL_REPO_TOKEN}@github.com/ethossustainability/ethosdashboard.git
           git push personal HEAD:main --force
