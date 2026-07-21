@@ -1,6 +1,18 @@
-- name: Push to personal repo
-  env:
-    TOKEN: ${{ secrets.PERSONAL_REPO_TOKEN }}
-  run: |
-    git remote add personal https://ethossustainability:${TOKEN}@github.com/ethossustainability/ethosdashboard.git
-    git push personal HEAD:main --force
+name: Sync to personal repo
+on:
+  push:
+    branches:
+      - main
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Push to personal repo
+        env:
+          TOKEN: ${{ secrets.PERSONAL_REPO_TOKEN }}
+        run: |
+          git remote add personal https://ethossustainability:${TOKEN}@github.com/ethossustainability/ethosdashboard.git
+          git push personal HEAD:main --force
