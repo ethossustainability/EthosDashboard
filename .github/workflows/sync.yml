@@ -14,7 +14,5 @@ jobs:
         env:
           TOKEN: ${{ secrets.PERSONAL_REPO_TOKEN }}
         run: |
-          git config --global user.email "sync@ethos.app"
-          git config --global user.name "Sync Bot"
           git remote set-url origin https://ethossustainability:${TOKEN}@github.com/ethossustainability/ethosdashboard.git
-          git push origin HEAD:main --force
+          GIT_CURL_VERBOSE=1 git push origin HEAD:main --force 2>&1 | head -50
