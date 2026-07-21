@@ -1,20 +1,6 @@
-name: Sync to personal repo
-on:
-  push:
-    branches: [main]
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - name: Test token access
-        run: |
-          curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: token ${{ secrets.PERSONAL_REPO_TOKEN }}" \
-            https://api.github.com/repos/ethossustainability/ethosdashboard
-      - name: Push to personal repo
-        run: |
-          git remote add personal https://x-access-token:${{ secrets.PERSONAL_REPO_TOKEN }}@github.com/ethossustainability/ethosdashboard.git
-          git push personal HEAD:main --force
+- name: Push to personal repo
+  env:
+    TOKEN: ${{ secrets.PERSONAL_REPO_TOKEN }}
+  run: |
+    git remote add personal https://ethossustainability:${TOKEN}@github.com/ethossustainability/ethosdashboard.git
+    git push personal HEAD:main --force
