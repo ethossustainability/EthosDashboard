@@ -6,8 +6,10 @@ import type { Notification } from '@/types/notifications';
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { notification_id: string } }
+  { params }: { params: Promise<{ notification_id: string }> }
 ): Promise<NextResponse<ApiResponse<Notification>>> {
+  const { notification_id: notificationId } = await params;
+
   const authHeader = req.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return NextResponse.json({ data: null, error: { code: 'UNAUTHORIZED', message: 'Missing or invalid authorization header' } }, { status: 401 });
@@ -27,7 +29,7 @@ export async function PATCH(
       is_read: true,
       read_at: new Date().toISOString(),
     })
-    .eq('notification_id', params.notification_id)
+    .eq('notification_id', notificationId)
     .eq('user_id', claims.sub)
     .select()
     .maybeSingle<Notification>();

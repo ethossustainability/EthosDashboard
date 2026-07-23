@@ -12,7 +12,7 @@ import type { Project } from '@/types/projects';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { project_id: string } }
+  { params }: { params: Promise<{ project_id: string }> }
 ): Promise<NextResponse<ApiResponse<Project>>> {
   try {
     // 1. Verify Auth
@@ -40,7 +40,7 @@ export async function POST(
       );
     }
 
-    const projectId = params.project_id;
+    const { project_id: projectId } = await params;
 
     // 2. Fetch Project and Details
     const { data: p, error: projectError } = await supabaseAdmin

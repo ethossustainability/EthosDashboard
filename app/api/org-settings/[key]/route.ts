@@ -16,8 +16,10 @@ function isPatchOrgSettingInput(value: unknown): value is PatchOrgSettingInput {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { key: string } }
+  { params }: { params: Promise<{ key: string }> }
 ): Promise<NextResponse<ApiResponse<OrgSetting>>> {
+  const { key } = await params;
+
   const authHeader = req.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return NextResponse.json({ data: null, error: { code: 'UNAUTHORIZED', message: 'Missing or invalid authorization header' } }, { status: 401 });
@@ -46,7 +48,7 @@ export async function PATCH(
       value: body.value,
       updated_by: claims.sub,
     })
-    .eq('key', decodeURIComponent(params.key))
+    .eq('key', decodeURIComponent(key))
     .select()
     .maybeSingle<OrgSetting>();
 

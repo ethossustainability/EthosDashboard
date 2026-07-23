@@ -17,7 +17,7 @@ type DeleteShiftResponse = {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { project_id: string; shift_id: string } }
+  { params }: { params: Promise<{ project_id: string; shift_id: string }> }
 ): Promise<NextResponse<ApiResponse<Shift>>> {
   try {
     // 1. Verify Auth
@@ -45,7 +45,7 @@ export async function PATCH(
       );
     }
 
-    const { project_id: projectId, shift_id: shiftId } = params;
+    const { project_id: projectId, shift_id: shiftId } = await params;
 
     // 2. Fetch Project (check exists, permissions, closed status)
     const { data: p, error: projectError } = await supabaseAdmin
@@ -158,7 +158,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { project_id: string; shift_id: string } }
+  { params }: { params: Promise<{ project_id: string; shift_id: string }> }
 ): Promise<NextResponse<ApiResponse<DeleteShiftResponse>>> {
   try {
     // 1. Verify Auth
@@ -186,7 +186,7 @@ export async function DELETE(
       );
     }
 
-    const { project_id: projectId, shift_id: shiftId } = params;
+    const { project_id: projectId, shift_id: shiftId } = await params;
 
     // 2. Fetch Project (check exists, permissions, published/closed status)
     const { data: p, error: projectError } = await supabaseAdmin

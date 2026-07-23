@@ -34,8 +34,10 @@ async function isApprovedMember(userId: string, projectId: string): Promise<bool
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { project_id: string } }
+  { params }: { params: Promise<{ project_id: string }> }
 ): Promise<NextResponse<ApiResponse<ProjectUpdatesResponse>>> {
+  const { project_id: projectId } = await params;
+
   const authHeader = req.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return NextResponse.json(
@@ -58,7 +60,7 @@ export async function GET(
   const { data: project } = await supabaseAdmin
     .from('projects')
     .select('project_id, created_by')
-    .eq('project_id', params.project_id)
+    .eq('project_id', projectId)
     .maybeSingle<ProjectOwnerRow>();
 
   if (!project) {
@@ -71,7 +73,7 @@ export async function GET(
   const canRead =
     claims.org_role_id === 3 ||
     project.created_by === claims.sub ||
-    await isApprovedMember(claims.sub, params.project_id);
+    await isApprovedMember(claims.sub, projectId);
 
   if (!canRead) {
     return NextResponse.json(
@@ -88,7 +90,7 @@ export async function GET(
   const { data: updates, error, count } = await supabaseAdmin
     .from('project_updates')
     .select('*', { count: 'exact' })
-    .eq('project_id', params.project_id)
+    .eq('project_id', projectId)
     .order('posted_at', { ascending: false })
     .range(from, to)
     .returns<ProjectUpdate[]>();

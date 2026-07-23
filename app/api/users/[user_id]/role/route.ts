@@ -9,7 +9,7 @@ import type { User } from '@/types/users';
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { user_id: string } }
+  { params }: { params: Promise<{ user_id: string }> }
 ): Promise<NextResponse<ApiResponse<User>>> {
   try {
     // 1. Verify Auth
@@ -53,7 +53,7 @@ export async function PATCH(
       );
     }
 
-    const targetUserId = params.user_id;
+    const { user_id: targetUserId } = await params;
 
     // 4. Check Target User
     const { data: targetUser } = await supabaseAdmin

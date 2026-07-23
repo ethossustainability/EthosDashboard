@@ -23,9 +23,11 @@ type FileWithProjectOwner = {
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { file_id: string } }
+  { params }: { params: Promise<{ file_id: string }> }
 ): Promise<NextResponse<ApiResponse<DeleteFileResponse>>> {
   try {
+    const { file_id: fileId } = await params;
+
     const authHeader = req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -55,7 +57,7 @@ export async function DELETE(
           created_by
         )
       `)
-      .eq('file_id', params.file_id)
+      .eq('file_id', fileId)
       .maybeSingle<FileWithProjectOwner>();
 
     if (!file) {
@@ -81,7 +83,7 @@ export async function DELETE(
     const { error: deleteError } = await supabaseAdmin
       .from('files')
       .delete()
-      .eq('file_id', params.file_id);
+      .eq('file_id', fileId);
 
     if (deleteError) {
       return NextResponse.json(

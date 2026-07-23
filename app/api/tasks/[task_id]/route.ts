@@ -109,9 +109,11 @@ async function assigneeIsApproved(projectId: string, assigneeId: string | null |
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { task_id: string } }
+  { params }: { params: Promise<{ task_id: string }> }
 ): Promise<NextResponse<ApiResponse<Task>>> {
   try {
+    const { task_id: taskId } = await params;
+
     const authHeader = req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -139,7 +141,7 @@ export async function PATCH(
       );
     }
 
-    const task = await fetchTask(params.task_id);
+    const task = await fetchTask(taskId);
     if (!task) {
       return NextResponse.json(
         { data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } },
@@ -205,7 +207,7 @@ export async function PATCH(
     const { data: updatedTask, error: updateError } = await supabaseAdmin
       .from('tasks')
       .update(updates)
-      .eq('task_id', params.task_id)
+      .eq('task_id', taskId)
       .select()
       .single<Task>();
 
@@ -242,9 +244,11 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { task_id: string } }
+  { params }: { params: Promise<{ task_id: string }> }
 ): Promise<NextResponse<ApiResponse<DeleteTaskResponse>>> {
   try {
+    const { task_id: taskId } = await params;
+
     const authHeader = req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -264,7 +268,7 @@ export async function DELETE(
       );
     }
 
-    const task = await fetchTask(params.task_id);
+    const task = await fetchTask(taskId);
     if (!task) {
       return NextResponse.json(
         { data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } },
@@ -285,7 +289,7 @@ export async function DELETE(
     const { error: deleteError } = await supabaseAdmin
       .from('tasks')
       .delete()
-      .eq('task_id', params.task_id);
+      .eq('task_id', taskId);
 
     if (deleteError) {
       return NextResponse.json(

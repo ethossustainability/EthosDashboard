@@ -77,7 +77,7 @@ type RawTeamApp = {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { project_id: string } }
+  { params }: { params: Promise<{ project_id: string }> }
 ): Promise<NextResponse<ApiResponse<ProjectDetailResponse>>> {
   try {
     // 1. Verify Auth
@@ -105,7 +105,7 @@ export async function GET(
       );
     }
 
-    const projectId = params.project_id;
+    const { project_id: projectId } = await params;
 
     // 2. Fetch Project Data
     const { data: p, error: projectError } = await supabaseAdmin
@@ -253,7 +253,7 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { project_id: string } }
+  { params }: { params: Promise<{ project_id: string }> }
 ): Promise<NextResponse<ApiResponse<Project>>> {
   try {
     // 1. Verify Auth
@@ -281,7 +281,7 @@ export async function PATCH(
       );
     }
 
-    const projectId = params.project_id;
+    const { project_id: projectId } = await params;
 
     // 2. Fetch existing project to check permissions and closed_at
     const { data: existing, error: existingError } = await supabaseAdmin

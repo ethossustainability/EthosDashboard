@@ -13,14 +13,16 @@ async function requireBoard(req: NextRequest): Promise<string | null> {
   return !error && user && claims?.org_role_id === 3 && claims.sub ? claims.sub : null;
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { flag_id: string } }): Promise<NextResponse<ApiResponse<VolunteerFlag>>> {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ flag_id: string }> }): Promise<NextResponse<ApiResponse<VolunteerFlag>>> {
+  const { flag_id: flagId } = await params;
+
   const boardId = await requireBoard(req);
   if (!boardId) return NextResponse.json({ data: null, error: { code: 'FORBIDDEN', message: 'Board only' } }, { status: 403 });
 
   const { data: flag, error } = await supabaseAdmin
     .from('volunteer_flags')
     .update({ resolved: true, resolved_by: boardId, resolved_at: new Date().toISOString() })
-    .eq('flag_id', params.flag_id)
+    .eq('flag_id', flagId)
     .select()
     .maybeSingle<VolunteerFlag>();
 

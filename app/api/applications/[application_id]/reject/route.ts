@@ -14,7 +14,7 @@ type RejectApplicationInput = {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { application_id: string } }
+  { params }: { params: Promise<{ application_id: string }> }
 ): Promise<NextResponse<ApiResponse<Application>>> {
   try {
     // 1. Verify Auth
@@ -42,7 +42,7 @@ export async function PATCH(
       );
     }
 
-    const applicationId = params.application_id;
+    const { application_id: applicationId } = await params;
 
     // 2. Fetch Application Context
     const { data: appData, error: appError } = await supabaseAdmin

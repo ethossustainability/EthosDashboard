@@ -56,7 +56,7 @@ type RawApplicationJoin = {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { user_id: string } }
+  { params }: { params: Promise<{ user_id: string }> }
 ): Promise<NextResponse<ApiResponse<UserProfileResponse>>> {
   try {
     // 1. Verify Supabase JWT via auth.getUser
@@ -87,7 +87,7 @@ export async function GET(
       );
     }
 
-    const targetUserId = params.user_id;
+    const { user_id: targetUserId } = await params;
 
     // 3. Fetch the target user's basic public info (No sensitive fields)
     const { data: targetUser, error: userError } = await supabaseAdmin

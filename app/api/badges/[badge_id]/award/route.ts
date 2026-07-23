@@ -32,9 +32,11 @@ function isAwardBadgeInput(value: unknown): value is AwardBadgeInput {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { badge_id: string } }
+  { params }: { params: Promise<{ badge_id: string }> }
 ): Promise<NextResponse<ApiResponse<UserBadge>>> {
   try {
+    const { badge_id: badgeId } = await params;
+
     const authHeader = req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -85,7 +87,7 @@ export async function POST(
           name
         )
       `)
-      .eq('badge_id', params.badge_id)
+      .eq('badge_id', badgeId)
       .maybeSingle<BadgeWithProjectOwner>();
 
     if (!badge) {
@@ -130,7 +132,7 @@ export async function POST(
       .from('user_badges')
       .select('user_badge_id')
       .eq('user_id', body.user_id)
-      .eq('badge_id', params.badge_id)
+      .eq('badge_id', badgeId)
       .maybeSingle<{ user_badge_id: string }>();
 
     if (existingAward) {
@@ -144,7 +146,7 @@ export async function POST(
       .from('user_badges')
       .insert({
         user_id: body.user_id,
-        badge_id: params.badge_id,
+        badge_id: badgeId,
         awarded_by: claims.sub,
         note: body.note ?? null,
       })

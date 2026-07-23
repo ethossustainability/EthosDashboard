@@ -12,8 +12,10 @@ function isBudgetInput(value: unknown): value is BudgetInput {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { project_id: string } }
+  { params }: { params: Promise<{ project_id: string }> }
 ): Promise<NextResponse<ApiResponse<Project>>> {
+  const { project_id: projectId } = await params;
+
   const authHeader = req.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) return NextResponse.json({ data: null, error: { code: 'UNAUTHORIZED', message: 'Missing authorization header' } }, { status: 401 });
 
@@ -29,7 +31,7 @@ export async function PATCH(
   const { data: project, error } = await supabaseAdmin
     .from('projects')
     .update({ allocated_budget: body.allocated_budget })
-    .eq('project_id', params.project_id)
+    .eq('project_id', projectId)
     .select()
     .maybeSingle<Project>();
 

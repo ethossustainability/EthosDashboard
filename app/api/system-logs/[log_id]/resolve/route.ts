@@ -13,13 +13,15 @@ async function requireBoard(req: NextRequest): Promise<boolean> {
   return !error && Boolean(user) && claims?.org_role_id === 3;
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { log_id: string } }): Promise<NextResponse<ApiResponse<SystemLog>>> {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ log_id: string }> }): Promise<NextResponse<ApiResponse<SystemLog>>> {
+  const { log_id: logId } = await params;
+
   if (!(await requireBoard(req))) return NextResponse.json({ data: null, error: { code: 'FORBIDDEN', message: 'Board only' } }, { status: 403 });
 
   const { data: log, error } = await supabaseAdmin
     .from('system_logs')
     .update({ resolved: true, resolved_at: new Date().toISOString() })
-    .eq('log_id', params.log_id)
+    .eq('log_id', logId)
     .select()
     .maybeSingle<SystemLog>();
 

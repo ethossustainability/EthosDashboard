@@ -36,8 +36,10 @@ async function requireBoard(req: NextRequest): Promise<boolean> {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { contact_id: string } }
+  { params }: { params: Promise<{ contact_id: string }> }
 ): Promise<NextResponse<ApiResponse<FundraisingContact>>> {
+  const { contact_id: contactId } = await params;
+
   if (!(await requireBoard(req))) return NextResponse.json({ data: null, error: { code: 'FORBIDDEN', message: 'Board only' } }, { status: 403 });
 
   const body: unknown = await req.json().catch(() => null);
@@ -51,7 +53,7 @@ export async function PATCH(
   const { data: contact, error } = await supabaseAdmin
     .from('fundraising_contacts')
     .update(updates)
-    .eq('contact_id', params.contact_id)
+    .eq('contact_id', contactId)
     .select()
     .maybeSingle<FundraisingContact>();
 
@@ -62,11 +64,13 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { contact_id: string } }
+  { params }: { params: Promise<{ contact_id: string }> }
 ): Promise<NextResponse<ApiResponse<DeleteContactResponse>>> {
+  const { contact_id: contactId } = await params;
+
   if (!(await requireBoard(req))) return NextResponse.json({ data: null, error: { code: 'FORBIDDEN', message: 'Board only' } }, { status: 403 });
 
-  const { error } = await supabaseAdmin.from('fundraising_contacts').delete().eq('contact_id', params.contact_id);
+  const { error } = await supabaseAdmin.from('fundraising_contacts').delete().eq('contact_id', contactId);
   if (error) return NextResponse.json({ data: null, error: { code: 'VALIDATION_ERROR', message: error.message } }, { status: 400 });
 
   return NextResponse.json({ data: { deleted: true }, error: null });

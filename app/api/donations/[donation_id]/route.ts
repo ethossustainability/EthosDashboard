@@ -29,8 +29,10 @@ async function requireBoard(req: NextRequest): Promise<boolean> {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { donation_id: string } }
+  { params }: { params: Promise<{ donation_id: string }> }
 ): Promise<NextResponse<ApiResponse<Donation>>> {
+  const { donation_id: donationId } = await params;
+
   if (!(await requireBoard(req))) return NextResponse.json({ data: null, error: { code: 'FORBIDDEN', message: 'Board only' } }, { status: 403 });
 
   const body: unknown = await req.json().catch(() => null);
@@ -46,7 +48,7 @@ export async function PATCH(
   const { data: donation, error } = await supabaseAdmin
     .from('donations')
     .update(body)
-    .eq('donation_id', params.donation_id)
+    .eq('donation_id', donationId)
     .select()
     .maybeSingle<Donation>();
 
@@ -57,11 +59,13 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { donation_id: string } }
+  { params }: { params: Promise<{ donation_id: string }> }
 ): Promise<NextResponse<ApiResponse<DeleteDonationResponse>>> {
+  const { donation_id: donationId } = await params;
+
   if (!(await requireBoard(req))) return NextResponse.json({ data: null, error: { code: 'FORBIDDEN', message: 'Board only' } }, { status: 403 });
 
-  const { error } = await supabaseAdmin.from('donations').delete().eq('donation_id', params.donation_id);
+  const { error } = await supabaseAdmin.from('donations').delete().eq('donation_id', donationId);
   if (error) return NextResponse.json({ data: null, error: { code: 'VALIDATION_ERROR', message: error.message } }, { status: 400 });
 
   return NextResponse.json({ data: { deleted: true }, error: null });

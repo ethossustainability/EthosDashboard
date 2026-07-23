@@ -15,7 +15,7 @@ type DeleteRoleResponse = {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { project_id: string; project_role_id: string } }
+  { params }: { params: Promise<{ project_id: string; project_role_id: string }> }
 ): Promise<NextResponse<ApiResponse<ProjectRole>>> {
   try {
     // 1. Verify Auth
@@ -43,7 +43,7 @@ export async function PATCH(
       );
     }
 
-    const { project_id: projectId, project_role_id: projectRoleId } = params;
+    const { project_id: projectId, project_role_id: projectRoleId } = await params;
 
     // 2. Fetch Project (permissions + closed check)
     const { data: p, error: projectError } = await supabaseAdmin
@@ -164,7 +164,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { project_id: string; project_role_id: string } }
+  { params }: { params: Promise<{ project_id: string; project_role_id: string }> }
 ): Promise<NextResponse<ApiResponse<DeleteRoleResponse>>> {
   try {
     // 1. Verify Auth
@@ -192,7 +192,7 @@ export async function DELETE(
       );
     }
 
-    const { project_id: projectId, project_role_id: projectRoleId } = params;
+    const { project_id: projectId, project_role_id: projectRoleId } = await params;
 
     // 2. Fetch Project (permissions + closed + published check)
     const { data: p, error: projectError } = await supabaseAdmin
