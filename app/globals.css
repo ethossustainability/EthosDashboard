@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@theme {
+  --color-cream: #FFFBF4;
+  --color-sand: #D4CCC4;
+  --color-warm-gray: #A89E94;
+  --color-brown-mid: #7D6F63;
+  --color-brown-dark: #514033;
+  --color-peach-light: #FFE2D6;
+  --color-peach: #FCBD9D;
+  --color-espresso: #413429;
+}
+
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
