@@ -33,21 +33,27 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user: authUser },
+    error,
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!authUser || error) {
     redirect('/login');
   }
 
-  const decodedRoleId = decodeRoleId(session.access_token);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const accessToken = session?.access_token ?? '';
+
+  const decodedRoleId = decodeRoleId(accessToken);
   const orgRoleId = decodedRoleId === 2 || decodedRoleId === 3 ? decodedRoleId : 1;
 
   const [{ data }, unresolvedLogResult] = await Promise.all([
     supabase
       .from('users')
       .select('first_name, last_name')
-      .eq('user_id', session.user.id)
+      .eq('user_id', authUser.id)
       .single(),
     orgRoleId === 3
       ? supabase
