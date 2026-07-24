@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -15,11 +16,13 @@ export default function AuthCallbackPage() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        router.push('/home');
+    } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        if (event === 'SIGNED_IN' && session) {
+          router.push('/home');
+        }
       }
-    });
+    );
 
     return () => subscription.unsubscribe();
   }, [router]);
