@@ -2,10 +2,18 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: object;
+};
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/home';
+  const redirectUrl = new URL(next, req.url);
+  const response = NextResponse.redirect(redirectUrl);
 
   if (code) {
     const cookieStore = await cookies();
@@ -14,10 +22,13 @@ export async function GET(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
       {
         cookies: {
-          getAll() { return cookieStore.getAll(); },
-          setAll(cookiesToSet: { name: string; value: string; options?: object }[]) {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet: CookieToSet[]) {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);
+              response.cookies.set(name, value, options);
             });
           },
         },
@@ -26,5 +37,5 @@ export async function GET(req: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  return NextResponse.redirect(new URL(next, req.url));
+  return response;
 }
