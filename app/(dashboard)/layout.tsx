@@ -14,6 +14,12 @@ type CurrentUser = {
   last_name: string;
 };
 
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: object;
+};
+
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
   const cookieStore = await cookies();
 
@@ -25,8 +31,12 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
         getAll() {
           return cookieStore.getAll();
         },
-        setAll() {
-          return;
+        setAll(cookiesToSet: CookieToSet[]) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {}
         },
       },
     },

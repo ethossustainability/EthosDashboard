@@ -8,6 +8,12 @@ type OnboardingLayoutProps = {
   children: React.ReactNode;
 };
 
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: object;
+};
+
 export default async function OnboardingLayout({ children }: OnboardingLayoutProps) {
   const cookieStore = await cookies();
 
@@ -19,8 +25,12 @@ export default async function OnboardingLayout({ children }: OnboardingLayoutPro
         getAll() {
           return cookieStore.getAll();
         },
-        setAll() {
-          return;
+        setAll(cookiesToSet: CookieToSet[]) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {}
         },
       },
     },

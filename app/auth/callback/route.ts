@@ -12,6 +12,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/home';
+  const safeNext = next.startsWith('/') ? next : '/home';
+  const forwardedHost = req.headers.get('x-forwarded-host');
+  const origin = forwardedHost ? `https://${forwardedHost}` : new URL(req.url).origin;
+
+  let exchangeError: string | null = null;
 
   if (code) {
     const cookieStore = await cookies();
@@ -33,8 +38,12 @@ export async function GET(req: NextRequest) {
     );
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    exchangeError = error?.message ?? null;
     console.log('Code exchange:', error?.message ?? 'success', 'user:', data?.user?.email ?? 'none');
   }
 
-  return NextResponse.redirect(new URL(next, req.url));
+  const response = NextResponse.redirect(`${origin}${exchangeError ? '/login?error=auth' : safeNext}`);
+  response.headers.set('Cache-Control', 'no-store');
+
+  return response;
 }
