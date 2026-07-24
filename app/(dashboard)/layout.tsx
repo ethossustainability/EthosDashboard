@@ -34,10 +34,11 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
 
   const {
     data: { user: authUser },
-    error,
+    error: authError,
   } = await supabase.auth.getUser();
+  console.log('Dashboard layout - user:', authUser?.email ?? 'null', 'error:', authError?.message ?? 'none');
 
-  if (!authUser || error) {
+  if (!authUser) {
     redirect('/login');
   }
 
