@@ -12,8 +12,6 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/home';
-  const redirectUrl = new URL(next, req.url);
-  const response = NextResponse.redirect(redirectUrl);
 
   if (code) {
     const cookieStore = await cookies();
@@ -28,14 +26,15 @@ export async function GET(req: NextRequest) {
           setAll(cookiesToSet: CookieToSet[]) {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);
-              response.cookies.set(name, value, options);
             });
           },
         },
       }
     );
-    await supabase.auth.exchangeCodeForSession(code);
+
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    console.log('Code exchange:', error?.message ?? 'success', 'user:', data?.user?.email ?? 'none');
   }
 
-  return response;
+  return NextResponse.redirect(new URL(next, req.url));
 }
